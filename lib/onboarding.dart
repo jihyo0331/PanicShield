@@ -1,8 +1,24 @@
 // ignore_for_file: prefer_const_constructors, use_key_in_widget_constructors
 
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:panicshield/text_styles.dart';
+import 'package:panicshield/colors.dart';
 
 void main() => runApp(PanicShieldApp());
+
+final ButtonStyle commonButtonStyle = ElevatedButton.styleFrom(
+  backgroundColor: primaryBlue,
+  minimumSize: Size(350, 60),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+);
+
+final ButtonStyle okButtonStyle = ElevatedButton.styleFrom(
+  backgroundColor: primaryBlue,
+  minimumSize: Size(45, 25),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+);
 
 class PanicShieldApp extends StatelessWidget {
   @override
@@ -52,32 +68,109 @@ class Onboarding1 extends StatelessWidget {
             Center(
               child: Text(
                 "안녕하세요?\n나만의 방패 패닉쉴드에요",
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                style: boldTextStyle,
                 textAlign: TextAlign.center,
               ),
             ),
             Spacer(),
             Center(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade900,
-                  minimumSize: Size(350, 60),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+                style: commonButtonStyle,
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => Onboarding2()),
                   );
                 },
-                child: Text("시작하기", style: TextStyle(fontSize: 24)),
+                child: Text("시작하기", style: commonbuttonTextStyle),
               ),
             ),
             SizedBox(height: 10),
-            Center(child: Text("로그인하기", style: TextStyle(fontSize: 14))),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage()),
+                  );
+                },
+                child: Text("로그인하기", style: textbuttonTextStyle),
+              ),
+            ),
             SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 로그인 페이지
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            Text("로그인을 진행해 주세요", style: boldTextStyle),
+            SizedBox(height: 6),
+            Text("안녕하세요? 패닉쉴드를 시작하기 위해 로그인을 진행해 주세요", style: explainTextStyle),
+            SizedBox(height: 30),
+
+            Text("아이디", style: nameTextStyle),
+            TextField(
+              decoration: InputDecoration(
+                hintText: "아이디를 입력해주세요",
+                hintStyle: secretTextStyle,
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+              ),
+            ),
+            SizedBox(height: 30),
+
+            Text("비밀번호", style: nameTextStyle),
+            TextField(
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: "비밀번호를 입력해주세요",
+                hintStyle: secretTextStyle,
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+              ),
+            ),
+            Spacer(),
+            Center(
+              child: ElevatedButton(
+                style: commonButtonStyle,
+                onPressed: () {
+                  // 로그인 로직 또는 다음 화면 이동
+                },
+                child: Text("로그인 하기", style: commonbuttonTextStyle),
+              ),
+            ),
+            SizedBox(height: 30),
           ],
         ),
       ),
@@ -101,7 +194,6 @@ class _Onboarding2State extends State<Onboarding2> {
 
   String? errorMessage;
 
-  // 조건 확인용 상태 변수
   bool isLongEnough = false;
   bool hasSpecialChar = false;
   bool hasUppercase = false;
@@ -133,9 +225,17 @@ class _Onboarding2State extends State<Onboarding2> {
   }
 
   void validateAndContinue() {
+    final name = nameController.text.trim();
     final id = idController.text;
     final pw = pwController.text;
     final pwCheck = pwCheckController.text;
+
+    if (name.isEmpty || id.isEmpty || pw.isEmpty || pwCheck.isEmpty) {
+      setState(() {
+        errorMessage = "모든 항목을 입력해 주세요!";
+      });
+      return;
+    }
 
     if (!isPasswordValid(pw, id)) {
       setState(() {
@@ -165,7 +265,13 @@ class _Onboarding2State extends State<Onboarding2> {
               icon: Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
-            Expanded(child: LinearProgressIndicator(value: widget.progress)),
+            Expanded(
+              child: LinearProgressIndicator(
+                value: 0.17,
+                color: primaryBlue,
+                backgroundColor: progressGrey,
+              ),
+            ),
           ],
         ),
       ),
@@ -174,18 +280,56 @@ class _Onboarding2State extends State<Onboarding2> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "회원가입을 진행해 주세요",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
+            Text("회원가입을 진행해 주세요", style: boldTextStyle),
             SizedBox(height: 10),
-            Text(
-              "안녕하세요? 패닉쉴드를 시작하기 위해 회원가입을 진행해 주세요",
-              style: TextStyle(color: Colors.grey),
-            ),
+            Text("안녕하세요? 패닉쉴드를 시작하기 위해 회원가입을 진행해 주세요", style: explainTextStyle),
             SizedBox(height: 20),
-            buildTextField("이름", "ex) 홍길동", controller: nameController),
-            buildTextField("아이디", "ex) honggle11", controller: idController),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("이름", style: nameTextStyle),
+                SizedBox(height: 5),
+                TextField(
+                  controller: nameController,
+                  keyboardType: TextInputType.name,
+                  decoration: InputDecoration(
+                    hintText: "ex) 홍길동",
+                    hintStyle: secretTextStyle,
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: primaryBlue),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: primaryBlue, width: 2),
+                    ),
+                  ),
+                ),
+                Divider(height: 20, thickness: 1),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("아이디", style: nameTextStyle),
+                SizedBox(height: 5),
+                TextField(
+                  controller: idController,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  ],
+                  decoration: InputDecoration(
+                    hintText: "ex) honggle11",
+                    hintStyle: secretTextStyle,
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: primaryBlue),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: primaryBlue),
+                    ),
+                  ),
+                ),
+                Divider(height: 20, thickness: 1),
+              ],
+            ),
             buildTextField(
               "비밀번호",
               "비밀번호를 입력해 주세요",
@@ -206,7 +350,7 @@ class _Onboarding2State extends State<Onboarding2> {
                 padding: EdgeInsets.only(top: 5, bottom: 10),
                 child: Text(
                   errorMessage!,
-                  style: TextStyle(color: Colors.red, fontSize: 14),
+                  style: TextStyle(color: Colors.red, fontSize: 11),
                 ),
               ),
             Column(
@@ -226,15 +370,9 @@ class _Onboarding2State extends State<Onboarding2> {
             Spacer(),
             Center(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade900,
-                  minimumSize: Size(350, 60),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+                style: commonButtonStyle,
                 onPressed: validateAndContinue,
-                child: Text("계속하기", style: TextStyle(fontSize: 24)),
+                child: Text("계속하기", style: commonbuttonTextStyle),
               ),
             ),
             SizedBox(height: 20),
@@ -254,7 +392,7 @@ class _Onboarding2State extends State<Onboarding2> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 16)),
+        Text(label, style: nameTextStyle),
         SizedBox(height: 5),
         TextField(
           controller: controller,
@@ -262,12 +400,7 @@ class _Onboarding2State extends State<Onboarding2> {
           onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
-            filled: true,
-            fillColor: Colors.grey.shade200,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(5),
-              borderSide: BorderSide.none,
-            ),
+            hintStyle: secretTextStyle,
           ),
         ),
         Divider(height: 20, thickness: 1),
@@ -283,17 +416,11 @@ Widget buildConditionItem(String text, bool conditionMet) {
       children: [
         Icon(
           conditionMet ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: conditionMet ? Colors.green : Colors.grey,
+          color: conditionMet ? primaryBlue : secretGrey,
           size: 18,
         ),
         SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 13,
-            color: conditionMet ? Colors.black : Colors.grey,
-          ),
-        ),
+        Text(text, style: checklistTextStyle),
       ],
     ),
   );
@@ -334,7 +461,13 @@ class _Onboarding3State extends State<Onboarding3> {
               icon: Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
-            Expanded(child: LinearProgressIndicator(value: 0.4)),
+            Expanded(
+              child: LinearProgressIndicator(
+                value: 0.34,
+                color: primaryBlue,
+                backgroundColor: progressGrey,
+              ),
+            ),
           ],
         ),
       ),
@@ -343,14 +476,7 @@ class _Onboarding3State extends State<Onboarding3> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "관심사를 골라주세요",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
+            Text("관심사를 골라주세요", style: boldTextStyle),
             SizedBox(height: 20),
             Expanded(
               child: ListView.separated(
@@ -374,11 +500,11 @@ class _Onboarding3State extends State<Onboarding3> {
                         border: Border.all(
                           color:
                               isSelected
-                                  ? Colors.indigo.shade900
-                                  : Colors.indigo,
+                                  ? primaryBlue
+                                  : primaryBlue.withOpacity(0.5),
                           width: isSelected ? 2 : 1,
                         ),
-                        color: isSelected ? Colors.indigo.shade50 : null,
+                        color: isSelected ? secretGrey : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -391,7 +517,7 @@ class _Onboarding3State extends State<Onboarding3> {
                           SizedBox(width: 10),
                           Text(
                             interests[index]["title"]!,
-                            style: TextStyle(fontSize: 16),
+                            style: boldTextStyle,
                           ),
                         ],
                       ),
@@ -404,14 +530,14 @@ class _Onboarding3State extends State<Onboarding3> {
             Center(
               child: TextButton(
                 onPressed: () {
-                  setState(() {
-                    selectedIndex = null;
-                    skipped = true;
-                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => Onboarding4()),
+                  );
                 },
                 child: Text(
-                  "선택지중에 없어요",
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  "선택지 중에 없어요",
+                  style: textbuttonTextStyle,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -419,15 +545,9 @@ class _Onboarding3State extends State<Onboarding3> {
             SizedBox(height: 12),
             Center(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo.shade900,
-                  minimumSize: Size(350, 60),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                style: commonButtonStyle,
                 onPressed:
-                    (selectedIndex != null || skipped)
+                    selectedIndex != null
                         ? () {
                           Navigator.push(
                             context,
@@ -435,7 +555,7 @@ class _Onboarding3State extends State<Onboarding3> {
                           );
                         }
                         : null,
-                child: Text("계속하기", style: TextStyle(fontSize: 20)),
+                child: Text("계속하기", style: commonbuttonTextStyle),
               ),
             ),
           ],
@@ -446,14 +566,272 @@ class _Onboarding3State extends State<Onboarding3> {
 }
 
 // Onboarding 4
-class Onboarding4 extends StatelessWidget {
+class Onboarding4 extends StatefulWidget {
   const Onboarding4({super.key});
+
+  @override
+  State<Onboarding4> createState() => _Onboarding4State();
+}
+
+class _Onboarding4State extends State<Onboarding4> {
+  final TextEditingController interestController = TextEditingController();
+  final List<String> interests = [];
+  bool isInputValid = false;
+
+  void handleInput() {
+    final input = interestController.text.trim();
+    if (input.isNotEmpty) {
+      setState(() {
+        interests.addAll(
+          input
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty && !interests.contains(e)),
+        );
+        interestController.clear();
+        isInputValid = true;
+      });
+    }
+  }
+
+  void handleContinue() {
+    if (interests.isNotEmpty) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Onboarding5()));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("전화번호 인증")),
-      body: Center(child: Text("여기에 전화번호 인증 UI를 구현하세요")),
+      appBar: AppBar(
+        leading: BackButton(),
+        title: LinearProgressIndicator(
+          value: 0.51,
+          color: primaryBlue,
+          backgroundColor: progressGrey,
+        ),
+        backgroundColor: progressGrey,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("무엇을 좋아하시나요?\n관심사를 세부적으로 입력해 주세요", style: boldTextStyle),
+            SizedBox(height: 8),
+            Text("수집된 자료는 상황 대처를 목적으로 인공지능이 활용합니다", style: explainTextStyle),
+            SizedBox(height: 24),
+            TextField(
+              controller: interestController,
+              decoration: InputDecoration(
+                hintText: "ex) 농구, 판타지, 옷, 메이크업",
+                suffixIcon: TextButton(
+                  style: okButtonStyle,
+                  onPressed: handleInput,
+                  child: Text("확인", style: okbuttonTextStyle),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+                border: UnderlineInputBorder(),
+              ),
+              onSubmitted: (_) => handleInput(),
+            ),
+            SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children:
+                  interests
+                      .map(
+                        (e) => Chip(
+                          label: Text(e),
+                          backgroundColor: primaryBlue.withOpacity(0.5),
+                          deleteIcon: Icon(Icons.close),
+                          onDeleted: () {
+                            setState(() {
+                              interests.remove(e);
+                              isInputValid = interests.isNotEmpty;
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "위 예시처럼 단어 형식으로 입력해 주세요. 여러 개 입력시 하나 입력 후 버튼을 눌러 주세요",
+              style: explainTextStyle,
+            ),
+            Spacer(),
+            Center(
+              child: ElevatedButton(
+                style: commonButtonStyle,
+                onPressed: handleContinue,
+                child: Text("계속하기", style: commonbuttonTextStyle),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Onboarding 5
+class Onboarding5 extends StatefulWidget {
+  const Onboarding5({super.key});
+
+  @override
+  State<Onboarding5> createState() => _Onboarding5State();
+}
+
+class _Onboarding5State extends State<Onboarding5> {
+  final TextEditingController _controller = TextEditingController();
+  bool isInputNotEmpty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      setState(() {
+        isInputNotEmpty = _controller.text.trim().isNotEmpty;
+      });
+    });
+  }
+
+  void handleContinue() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => Onboarding6()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 상단 바
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value: 0.68,
+                    color: primaryBlue,
+                    backgroundColor: progressGrey,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+
+            Text("공황발작 발생 시 본인만의\n대처 방법이 있으신가요?", style: boldTextStyle),
+            SizedBox(height: 8),
+            Text("대처방법이 없다면 아무것도 적지 않고 계속하기를 눌러주세요", style: explainTextStyle),
+            SizedBox(height: 32),
+
+            Text("대처방법을 적어주세요"),
+            TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: "ex) 다른 생각을 한다",
+                hintStyle: secretTextStyle,
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 12),
+            Text(
+              "위 예시처럼 문장 형식으로 입력해 주세요\n대처 방법을 자세하고 정확하게 적어주세요",
+              style: explainTextStyle,
+            ),
+
+            Spacer(),
+
+            Center(
+              child: ElevatedButton(
+                style: commonButtonStyle,
+                onPressed: handleContinue,
+                child: Text("계속하기", style: commonbuttonTextStyle),
+              ),
+            ),
+            SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Onboarding 6
+class Onboarding6 extends StatelessWidget {
+  const Onboarding6({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 50),
+
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value: 1.0,
+                    color: primaryBlue,
+                    backgroundColor: progressGrey,
+                  ),
+                ),
+              ],
+            ),
+
+            Spacer(),
+
+            Center(
+              child: Image.asset('img/Handshake.png', width: 160, height: 160),
+            ),
+            SizedBox(height: 24),
+
+            Text(
+              "모든 설정이 끝났어요\n조금만 기다리면\n나만의 방패가 만들어져요",
+              style: boldTextStyle,
+              textAlign: TextAlign.center,
+            ),
+
+            Spacer(),
+
+            ElevatedButton(
+              style: commonButtonStyle,
+              onPressed: () {},
+              child: Text("들어가기", style: commonbuttonTextStyle),
+            ),
+            SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
 }
