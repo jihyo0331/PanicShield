@@ -75,6 +75,13 @@ flutter:
     - img/Handshake.png
     - img/Film projector.png
     - img/Soccer ball.png
+    - img/PanicShield_logo.png
+    - img/chat.png
+    - img/chat_c.png
+    - img/home.png
+    - img/home_c.png
+    - img/mypage.png
+    - img/mypage_c.png
     
 
   # An image asset can refer to one or more resolution-specific "variants", see

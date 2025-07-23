@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding.dart';
+import 'home.dart';
 
 void main() => runApp(const PanicShieldApp());
 
@@ -11,7 +12,7 @@ class PanicShieldApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: Onboarding1(),
+      home: Home(),
     );
   }
 }
