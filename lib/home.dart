@@ -66,7 +66,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               // ignore: deprecated_member_use
               color: Colors.black.withOpacity(0.3),
               offset: Offset(0, 4),
-              blurRadius: 12,
+              blurRadius: 10,
               spreadRadius: 1,
             ),
           ],
