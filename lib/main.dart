@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding.dart';
+import 'home.dart';
 
 void main() => runApp(const PanicShieldApp());
 
@@ -10,10 +11,14 @@ class PanicShieldApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Pretendard', primarySwatch: Colors.blue),
-      home: Onboarding1(),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontWeight: FontWeight.w500), // Medium
+          bodyLarge: TextStyle(fontWeight: FontWeight.w700), // Bold
+        ),
+      ),
+      home: Home(),
     );
   }
 }
-
-// Onboarding1과 Onboarding2 위젯은 이전 코드에서 그대로 유지됩니다.

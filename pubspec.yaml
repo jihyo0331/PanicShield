@@ -58,10 +58,32 @@ flutter:
         - asset: fonts/Pretendard-Bold.ttf
           weight: 700
 
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  fonts:
+    - family: Pretendard
+      fonts:
+         - asset: font/Pretendard-Regular.otf
+           weight: 400
+         - asset: font/Pretendard-Bold.otf
+           weight: 700
+         - asset: font/Pretendard-Medium.otf
+           weight: 500
+         - asset: font/Pretendard-Light.otf
+           weight: 300
+         - asset: font/Pretendard-ExtraBold.otf
+           weight: 800
+         - asset: font/Pretendard-ExtraLight.otf
+           weight: 200
+         - asset: font/Pretendard-SemiBold.otf
+           weight: 600
+         - asset: font/Pretendard-Thin.otf
+           weight: 100
+           
+
 
   # To add assets to your application, add an assets section, like this:
   assets:
@@ -79,6 +101,17 @@ flutter:
     - img/Handshake.png
     - img/Film_projector.png
     - img/Soccer_ball.png
+    - img/Film projector.png
+    - img/Soccer ball.png
+    - img/PanicShield_logo.png
+    - img/chat.png
+    - img/chat_c.png
+    - img/home.png
+    - img/home_c.png
+    - img/mypage.png
+    - img/mypage_c.png
+    - img/stretching.png
+    - img/out.png
     
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -92,7 +125,7 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
+ 
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
