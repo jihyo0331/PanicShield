@@ -10,7 +10,7 @@ class PanicShieldApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(fontFamily: 'Pretendard', primarySwatch: Colors.blue),
       home: Onboarding1(),
     );
   }
