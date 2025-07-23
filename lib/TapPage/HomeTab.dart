@@ -155,7 +155,7 @@ class HomeTab extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
                                 Text(
-                                  '호흡훈련 하기',
+                                  '호흡 훈련 하기',
                                   style: TextStyle(
                                     fontFamily: 'Pretendard',
                                     fontWeight: FontWeight.w700,
