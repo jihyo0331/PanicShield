@@ -589,7 +589,7 @@ class _Onboarding4State extends State<Onboarding4> {
               .where((e) => e.isNotEmpty && !interests.contains(e)),
         );
         interestController.clear();
-        isInputValid = true;
+        isInputValid = interests.isNotEmpty;
       });
     }
   }
@@ -610,9 +610,6 @@ class _Onboarding4State extends State<Onboarding4> {
           color: primaryBlue,
           backgroundColor: progressGrey,
         ),
-        backgroundColor: progressGrey,
-        elevation: 0,
-        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: EdgeInsets.all(24),
@@ -672,7 +669,7 @@ class _Onboarding4State extends State<Onboarding4> {
             Center(
               child: ElevatedButton(
                 style: commonButtonStyle,
-                onPressed: handleContinue,
+                onPressed: isInputValid ? handleContinue : null,
                 child: Text("계속하기", style: commonbuttonTextStyle),
               ),
             ),
