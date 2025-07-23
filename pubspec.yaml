@@ -59,22 +59,20 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - img/appicon 1.png
-    - img/appicon 2.png
     - img/appicon.png
     - img/BackArrow.png
     - img/Dog.png
-    - img/Open book.png
-    - img/Money bag.png
-    - img/en.png
+    - img/Open_book.png
+    - img/Money_bag.png
     - img/ko.png
-    - img/start 1.png
-    - img/Waving hand.png
+    - img/en.png
+    - img/start.png
+    - img/Waving_hand.png
     - img/Joystick.png
     - img/Lipstick.png
     - img/Handshake.png
-    - img/Film projector.png
-    - img/Soccer ball.png
+    - img/Film_projector.png
+    - img/Soccer_ball.png
     
 
   # An image asset can refer to one or more resolution-specific "variants", see

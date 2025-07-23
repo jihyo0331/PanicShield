@@ -36,18 +36,19 @@ class Onboarding1 extends StatelessWidget {
               padding: EdgeInsets.only(left: 20, top: 10),
               child: GestureDetector(
                 onTap: () {},
-                child: Image.asset('assets/ko.png', width: 40, height: 52),
+                child: Image.asset('img/ko.png', width: 40, height: 52),
               ),
             ),
             SizedBox(height: 100),
             Center(
               child: Image.asset(
-                'assets/Waving hand.png',
+                'img/Waving_hand.png',
                 width: 200,
                 height: 200,
               ),
             ),
             SizedBox(height: 30),
+
             Center(
               child: Text(
                 "안녕하세요?\n나만의 방패 패닉쉴드에요",
