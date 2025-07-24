@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'onboarding.dart';
 import 'home.dart';
+import 'language_manager.dart';
 
-void main() => runApp(const PanicShieldApp());
+void main() => runApp(
+  ChangeNotifierProvider(
+    create: (_) => LanguageManager(),
+    child: const PanicShieldApp(),
+  ),
+);
 
 class PanicShieldApp extends StatelessWidget {
   const PanicShieldApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(fontWeight: FontWeight.w500), // Medium
-          bodyLarge: TextStyle(fontWeight: FontWeight.w700), // Bold
-        ),
-      ),
-      home: Home(),
+      home: const Onboarding1(),
     );
   }
 }

@@ -1,22 +1,38 @@
 // ignore_for_file: prefer_const_constructors, use_key_in_widget_constructors
 
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:panicshield/text_styles.dart';
 import 'package:panicshield/colors.dart';
+import 'home.dart';
+import 'language_manager.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-void main() => runApp(PanicShieldApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(PanicShieldApp());
+}
+
+// Onboarding Constants
+const double kProgressBarHeight = 17.0;
+const int kOnboardingTotalSteps = 7;
+const double kProgressBarRadius = 8.0;
+final Map<String, dynamic> registrationData = {};
+bool _isKorean = true;
 
 final ButtonStyle commonButtonStyle = ElevatedButton.styleFrom(
   backgroundColor: primaryBlue,
-  minimumSize: Size(350, 60),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  minimumSize: Size(400, 75),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
 );
 
 final ButtonStyle okButtonStyle = ElevatedButton.styleFrom(
   backgroundColor: primaryBlue,
-  minimumSize: Size(45, 25),
+  minimumSize: Size(90, 25),
   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
 );
 
@@ -39,8 +55,15 @@ class PhoneVerificationPage extends StatelessWidget {
   }
 }
 
-// Onboarding 1
-class Onboarding1 extends StatelessWidget {
+// 온보딩 1
+class Onboarding1 extends StatefulWidget {
+  const Onboarding1({super.key});
+
+  @override
+  State<Onboarding1> createState() => _Onboarding1State();
+}
+
+class _Onboarding1State extends State<Onboarding1> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,30 +72,43 @@ class Onboarding1 extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.only(left: 20, top: 10),
+              padding: EdgeInsets.only(left: 20, top: 30),
               child: GestureDetector(
-                onTap: () {},
-                child: Image.asset('img/ko.png', width: 40, height: 52),
+                onTap: () {
+                  setState(() {
+                    _isKorean = !_isKorean;
+                    // Sync with LanguageManager
+                    Provider.of<LanguageManager>(context, listen: false)
+                        .isKorean = _isKorean;
+                  });
+                },
+                child: Image.asset(
+                  _isKorean ? 'img/ko.png' : 'img/en.png',
+                  width: 40,
+                  height: 52,
+                ),
               ),
             ),
-            SizedBox(height: 100),
-            Center(
+            SizedBox(height: 300),
+            Align(
+              alignment: Alignment(-0.2, 0),
               child: Image.asset(
                 'img/Waving_hand.png',
                 width: 200,
                 height: 200,
               ),
             ),
-            SizedBox(height: 30),
-
+            SizedBox(height: 10),
             Center(
               child: Text(
-                "안녕하세요?\n나만의 방패 패닉쉴드에요",
+                _isKorean
+                    ? "안녕하세요?\n나만의 방패 패닉쉴드에요"
+                    : "Hello!\nI’m PanicShield,\nmy own shield.",
                 style: boldTextStyle,
                 textAlign: TextAlign.center,
               ),
             ),
-            Spacer(),
+            SizedBox(height: 200),
             Center(
               child: ElevatedButton(
                 style: commonButtonStyle,
@@ -82,7 +118,10 @@ class Onboarding1 extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => Onboarding2()),
                   );
                 },
-                child: Text("시작하기", style: commonbuttonTextStyle),
+                child: Text(
+                  _isKorean ? "시작하기" : "Get Started",
+                  style: commonbuttonTextStyle,
+                ),
               ),
             ),
             SizedBox(height: 10),
@@ -94,7 +133,10 @@ class Onboarding1 extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => LoginPage()),
                   );
                 },
-                child: Text("로그인하기", style: textbuttonTextStyle),
+                child: Text(
+                  _isKorean ? "로그인하기" : "Log in",
+                  style: textbuttonTextStyle,
+                ),
               ),
             ),
             SizedBox(height: 20),
@@ -106,14 +148,56 @@ class Onboarding1 extends StatelessWidget {
 }
 
 // 로그인 페이지
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController idController = TextEditingController();
+  final TextEditingController pwController = TextEditingController();
+
+  @override
+  void dispose() {
+    idController.dispose();
+    pwController.dispose();
+    super.dispose();
+  }
+
+  Future<void> handleLogin() async {
+    final id = idController.text.trim();
+    final pw = pwController.text;
+    try {
+      final res = await http.post(
+        Uri.parse('https://panicshield.ngrok.dev/api/auth/signin'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': id, 'password': pw}),
+      );
+      if (res.statusCode == 200) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => Home()),
+          (Route<dynamic> route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isKorean ? '로그인에 실패했습니다.' : 'Login failed')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isKorean ? '네트워크 오류가 발생했습니다.' : 'Network error'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(24).copyWith(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -126,37 +210,45 @@ class LoginPage extends StatelessWidget {
               ],
             ),
             SizedBox(height: 24),
-            Text("로그인을 진행해 주세요", style: boldTextStyle),
+            Text(
+              _isKorean ? "로그인을 진행해 주세요" : "Log in to continue",
+              style: boldTextStyle,
+            ),
             SizedBox(height: 6),
-            Text("안녕하세요? 패닉쉴드를 시작하기 위해 로그인을 진행해 주세요", style: explainTextStyle),
-            SizedBox(height: 30),
-
-            Text("아이디", style: nameTextStyle),
+            Text(
+              _isKorean
+                  ? "안녕하세요? 패닉쉴드를 시작하기 위해 로그인을 진행해 주세요"
+                  : "Hello! Please log in to get started with PanicShield.",
+              style: explainTextStyle,
+            ),
+            SizedBox(height: 80),
+            Text(_isKorean ? "아이디" : "User ID", style: nameTextStyle),
             TextField(
+              controller: idController,
               decoration: InputDecoration(
-                hintText: "아이디를 입력해주세요",
+                hintText: _isKorean ? "아이디를 입력해주세요" : "Enter your user ID",
                 hintStyle: secretTextStyle,
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: primaryBlue),
+                  borderSide: BorderSide(color: primaryBlue, width: 2),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: primaryBlue),
+                  borderSide: BorderSide(color: primaryBlue, width: 2),
                 ),
               ),
             ),
             SizedBox(height: 30),
-
-            Text("비밀번호", style: nameTextStyle),
+            Text(_isKorean ? "비밀번호" : "Password", style: nameTextStyle),
             TextField(
+              controller: pwController,
               obscureText: true,
               decoration: InputDecoration(
-                hintText: "비밀번호를 입력해주세요",
+                hintText: _isKorean ? "비밀번호를 입력해주세요" : "Enter your password",
                 hintStyle: secretTextStyle,
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: primaryBlue),
+                  borderSide: BorderSide(color: primaryBlue, width: 2),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: primaryBlue),
+                  borderSide: BorderSide(color: primaryBlue, width: 2),
                 ),
               ),
             ),
@@ -164,13 +256,13 @@ class LoginPage extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 style: commonButtonStyle,
-                onPressed: () {
-                  // 로그인 로직 또는 다음 화면 이동
-                },
-                child: Text("로그인 하기", style: commonbuttonTextStyle),
+                onPressed: handleLogin,
+                child: Text(
+                  _isKorean ? "로그인 하기" : "Login",
+                  style: commonbuttonTextStyle,
+                ),
               ),
             ),
-            SizedBox(height: 30),
           ],
         ),
       ),
@@ -178,7 +270,7 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-// Onboarding 2
+// 온보딩 2
 class Onboarding2 extends StatefulWidget {
   final double progress = 0.20;
 
@@ -224,7 +316,7 @@ class _Onboarding2State extends State<Onboarding2> {
     });
   }
 
-  void validateAndContinue() {
+  Future<void> validateAndContinue() async {
     final name = nameController.text.trim();
     final id = idController.text;
     final pw = pwController.text;
@@ -232,25 +324,34 @@ class _Onboarding2State extends State<Onboarding2> {
 
     if (name.isEmpty || id.isEmpty || pw.isEmpty || pwCheck.isEmpty) {
       setState(() {
-        errorMessage = "모든 항목을 입력해 주세요!";
+        errorMessage =
+            _isKorean ? "모든 항목을 입력해 주세요!" : "Please fill out all fields.";
       });
       return;
     }
 
     if (!isPasswordValid(pw, id)) {
       setState(() {
-        errorMessage = "비밀번호 조건을 확인해주세요!";
+        errorMessage =
+            _isKorean
+                ? "비밀번호 조건을 확인해주세요!"
+                : "Please check the password conditions!";
       });
       return;
     }
 
     if (pw != pwCheck) {
       setState(() {
-        errorMessage = "비밀번호가 일치하지 않습니다.";
+        errorMessage =
+            _isKorean ? "비밀번호가 일치하지 않습니다." : "Passwords do not match.";
       });
       return;
     }
 
+    // 회원가입 API 호출 로직 삭제. 다음 온보딩으로 이동
+    registrationData['name'] = name;
+    registrationData['username'] = id;
+    registrationData['password'] = pw;
     Navigator.push(context, MaterialPageRoute(builder: (_) => Onboarding3()));
   }
 
@@ -266,51 +367,64 @@ class _Onboarding2State extends State<Onboarding2> {
               onPressed: () => Navigator.pop(context),
             ),
             Expanded(
-              child: LinearProgressIndicator(
-                value: 0.17,
-                color: primaryBlue,
-                backgroundColor: progressGrey,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(kProgressBarRadius),
+                child: LinearProgressIndicator(
+                  minHeight: kProgressBarHeight,
+                  value: 0.17,
+                  color: primaryBlue,
+                  backgroundColor: progressGrey,
+                ),
               ),
             ),
           ],
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(15),
+        padding: EdgeInsets.all(24).copyWith(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("회원가입을 진행해 주세요", style: boldTextStyle),
+            Text(
+              _isKorean ? "회원가입을 진행해 주세요" : "Please proceed with the sign up.",
+              style: _isKorean ? boldTextStyle : en_boldTextStyle,
+            ),
             SizedBox(height: 10),
-            Text("안녕하세요? 패닉쉴드를 시작하기 위해 회원가입을 진행해 주세요", style: explainTextStyle),
-            SizedBox(height: 20),
+            Text(
+              _isKorean
+                  ? "안녕하세요? 패닉쉴드를 시작하기 위해 회원가입을 진행해 주세요"
+                  : "Hello! Please proceed with the sign-up to start PanicShield.",
+              style: _isKorean ? explainTextStyle : en_explainTextStyle,
+            ),
+            SizedBox(height: 60),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("이름", style: nameTextStyle),
-                SizedBox(height: 5),
+                Text(_isKorean ? "이름" : "name", style: nameTextStyle),
+                SizedBox(height: 1),
                 TextField(
                   controller: nameController,
                   keyboardType: TextInputType.name,
                   decoration: InputDecoration(
-                    hintText: "ex) 홍길동",
+                    hintText: _isKorean ? "ex) 홍길동" : "ex) HongGildong",
                     hintStyle: secretTextStyle,
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: primaryBlue),
+                      borderSide: BorderSide(color: primaryBlue, width: 2),
                     ),
                     focusedBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: primaryBlue, width: 2),
                     ),
                   ),
                 ),
-                Divider(height: 20, thickness: 1),
+                // Divider removed
               ],
             ),
+            SizedBox(height: 30),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("아이디", style: nameTextStyle),
-                SizedBox(height: 5),
+                Text(_isKorean ? "아이디" : "user ID", style: nameTextStyle),
+                SizedBox(height: 1),
                 TextField(
                   controller: idController,
                   inputFormatters: [
@@ -320,27 +434,29 @@ class _Onboarding2State extends State<Onboarding2> {
                     hintText: "ex) honggle11",
                     hintStyle: secretTextStyle,
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: primaryBlue),
+                      borderSide: BorderSide(color: primaryBlue, width: 2),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: primaryBlue),
+                      borderSide: BorderSide(color: primaryBlue, width: 2),
                     ),
                   ),
                 ),
-                Divider(height: 20, thickness: 1),
+                // Divider removed
               ],
             ),
+            SizedBox(height: 30),
             buildTextField(
-              "비밀번호",
-              "비밀번호를 입력해 주세요",
+              _isKorean ? "비밀번호" : "password",
+              _isKorean ? "비밀번호를 입력해 주세요" : "please enter your password",
               controller: pwController,
               obscure: true,
               onChanged:
                   (value) => checkPasswordConditions(value, idController.text),
             ),
+            SizedBox(height: 30),
             buildTextField(
-              "비밀번호 재확인",
-              "비밀번호를 입력해 주세요",
+              _isKorean ? "비밀번호 재확인" : "confirm password",
+              _isKorean ? "비밀번호를 입력해 주세요" : "please re-enter your password",
               controller: pwCheckController,
               obscure: true,
             ),
@@ -356,11 +472,24 @@ class _Onboarding2State extends State<Onboarding2> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                buildConditionItem("10자 이상으로 작성해 주세요", isLongEnough),
-                buildConditionItem("특수문자를 하나 이상 사용해 주세요", hasSpecialChar),
-                buildConditionItem("대문자를 포함해 주세요", hasUppercase),
                 buildConditionItem(
-                  "아이디와 연관되는 문자를 사용하지 말아주세요",
+                  _isKorean ? "10자 이상으로 작성해 주세요" : "At least 10 characters.",
+                  isLongEnough,
+                ),
+                buildConditionItem(
+                  _isKorean
+                      ? "특수문자를 하나 이상 사용해 주세요"
+                      : "Include at least one special character.",
+                  hasSpecialChar,
+                ),
+                buildConditionItem(
+                  _isKorean ? "대문자를 포함해 주세요" : "Include an uppercase letter.",
+                  hasUppercase,
+                ),
+                buildConditionItem(
+                  _isKorean
+                      ? "아이디와 연관되는 문자를 사용하지 말아주세요"
+                      : "Avoid using characters related to the username.",
                   idController.text.isNotEmpty &&
                       pwController.text.isNotEmpty &&
                       !containsId,
@@ -372,10 +501,12 @@ class _Onboarding2State extends State<Onboarding2> {
               child: ElevatedButton(
                 style: commonButtonStyle,
                 onPressed: validateAndContinue,
-                child: Text("계속하기", style: commonbuttonTextStyle),
+                child: Text(
+                  _isKorean ? "계속하기" : "Continue",
+                  style: commonbuttonTextStyle,
+                ),
               ),
             ),
-            SizedBox(height: 20),
           ],
         ),
       ),
@@ -393,7 +524,7 @@ class _Onboarding2State extends State<Onboarding2> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: nameTextStyle),
-        SizedBox(height: 5),
+        SizedBox(height: 0.5),
         TextField(
           controller: controller,
           obscureText: obscure,
@@ -401,9 +532,15 @@ class _Onboarding2State extends State<Onboarding2> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: secretTextStyle,
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: primaryBlue, width: 2),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: primaryBlue, width: 2),
+            ),
           ),
         ),
-        Divider(height: 20, thickness: 1),
+        // Divider removed
       ],
     );
   }
@@ -428,7 +565,7 @@ Widget buildConditionItem(String text, bool conditionMet) {
 
 // PhoneVerificationPage, SelectInterestView 등은 이후에 이어서 작성됩니다.
 
-// Onboarding 3
+// 온보딩 3
 class Onboarding3 extends StatefulWidget {
   const Onboarding3({super.key});
 
@@ -438,13 +575,25 @@ class Onboarding3 extends StatefulWidget {
 
 class _Onboarding3State extends State<Onboarding3> {
   final interests = [
-    {"title": "스포츠, 헬스", "img": "img/Soccer_ball.png"},
-    {"title": "영화, 드라마", "img": "img/Film_projector.png"},
-    {"title": "뷰티, 패션", "img": "img/Lipstick.png"},
-    {"title": "반려동물", "img": "img/Dog.png"},
-    {"title": "재테크, 금융", "img": "img/Money_bag.png"},
-    {"title": "게임", "img": "img/Joystick.png"},
-    {"title": "독서", "img": "img/Open_book.png"},
+    {
+      "title": _isKorean ? "스포츠, 헬스" : "Sports, Health",
+      "img": "img/Soccer_ball.png",
+    },
+    {
+      "title": _isKorean ? "영화, 드라마" : "Movie, Drama",
+      "img": "img/Film_projector.png",
+    },
+    {
+      "title": _isKorean ? "뷰티, 패션" : "Beauty, Fashion",
+      "img": "img/Lipstick.png",
+    },
+    {"title": _isKorean ? "반려동물" : "Pet", "img": "img/Dog.png"},
+    {
+      "title": _isKorean ? "재테크, 금융" : "Investment, Finance",
+      "img": "img/Money_bag.png",
+    },
+    {"title": _isKorean ? "게임" : "Game", "img": "img/Joystick.png"},
+    {"title": _isKorean ? "독서" : "Reading", "img": "img/Open_book.png"},
   ];
 
   int? selectedIndex;
@@ -462,21 +611,28 @@ class _Onboarding3State extends State<Onboarding3> {
               onPressed: () => Navigator.pop(context),
             ),
             Expanded(
-              child: LinearProgressIndicator(
-                value: 0.34,
-                color: primaryBlue,
-                backgroundColor: progressGrey,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(kProgressBarRadius),
+                child: LinearProgressIndicator(
+                  minHeight: kProgressBarHeight,
+                  value: 0.34,
+                  color: primaryBlue,
+                  backgroundColor: progressGrey,
+                ),
               ),
             ),
           ],
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(24).copyWith(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("관심사를 골라주세요", style: boldTextStyle),
+            Text(
+              _isKorean ? "관심사를 골라주세요" : "Please select your interests.",
+              style: boldTextStyle,
+            ),
             SizedBox(height: 20),
             Expanded(
               child: ListView.separated(
@@ -536,13 +692,13 @@ class _Onboarding3State extends State<Onboarding3> {
                   );
                 },
                 child: Text(
-                  "선택지 중에 없어요",
+                  _isKorean ? "선택지 중에 없어요" : "Not on the list.",
                   style: textbuttonTextStyle,
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-            SizedBox(height: 12),
+
             Center(
               child: ElevatedButton(
                 style: commonButtonStyle,
@@ -555,7 +711,10 @@ class _Onboarding3State extends State<Onboarding3> {
                           );
                         }
                         : null,
-                child: Text("계속하기", style: commonbuttonTextStyle),
+                child: Text(
+                  _isKorean ? "계속하기" : "Continue",
+                  style: commonbuttonTextStyle,
+                ),
               ),
             ),
           ],
@@ -565,7 +724,7 @@ class _Onboarding3State extends State<Onboarding3> {
   }
 }
 
-// Onboarding 4
+// 온보딩 4
 class Onboarding4 extends StatefulWidget {
   const Onboarding4({super.key});
 
@@ -596,6 +755,7 @@ class _Onboarding4State extends State<Onboarding4> {
 
   void handleContinue() {
     if (interests.isNotEmpty) {
+      registrationData['interests'] = interests;
       Navigator.push(context, MaterialPageRoute(builder: (_) => Onboarding5()));
     }
   }
@@ -605,29 +765,49 @@ class _Onboarding4State extends State<Onboarding4> {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(),
-        title: LinearProgressIndicator(
-          value: 0.51,
-          color: primaryBlue,
-          backgroundColor: progressGrey,
+        title: ClipRRect(
+          borderRadius: BorderRadius.circular(kProgressBarRadius),
+          child: LinearProgressIndicator(
+            minHeight: kProgressBarHeight,
+            value: 0.51,
+            color: primaryBlue,
+            backgroundColor: progressGrey,
+          ),
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(24).copyWith(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("무엇을 좋아하시나요?\n관심사를 세부적으로 입력해 주세요", style: boldTextStyle),
+            Text(
+              _isKorean
+                  ? "무엇을 좋아하시나요?\n관심사를 세부적으로 입력해 주세요"
+                  : "What do you like?\nEnter details.",
+              style: boldTextStyle,
+            ),
             SizedBox(height: 8),
-            Text("수집된 자료는 상황 대처를 목적으로 인공지능이 활용합니다", style: explainTextStyle),
-            SizedBox(height: 24),
+            Text(
+              _isKorean
+                  ? "수집된 자료는 상황 대처를 목적으로 인공지능이 활용합니다"
+                  : "Collected data is used by AI for situational response.",
+              style: explainTextStyle,
+            ),
+            SizedBox(height: 250),
             TextField(
               controller: interestController,
               decoration: InputDecoration(
-                hintText: "ex) 농구, 판타지, 옷, 메이크업",
+                hintText:
+                    _isKorean
+                        ? "ex) 농구, 판타지, 옷, 메이크업"
+                        : "ex) Basketball, Fantasy, Clothes, Makeup",
                 suffixIcon: TextButton(
                   style: okButtonStyle,
                   onPressed: handleInput,
-                  child: Text("확인", style: okbuttonTextStyle),
+                  child: Text(
+                    _isKorean ? "확인" : "OK",
+                    style: okbuttonTextStyle,
+                  ),
                 ),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: primaryBlue),
@@ -662,15 +842,21 @@ class _Onboarding4State extends State<Onboarding4> {
             ),
             SizedBox(height: 8),
             Text(
-              "위 예시처럼 단어 형식으로 입력해 주세요. 여러 개 입력시 하나 입력 후 버튼을 눌러 주세요",
+              _isKorean
+                  ? "위 예시처럼 단어 형식으로 입력해 주세요.\n여러 개 입력시 하나 입력 후 버튼을 눌러 주세요"
+                  : "Enter in word format like the example above.\nFor multiple entries, enter one and press the button.",
               style: explainTextStyle,
             ),
+
             Spacer(),
             Center(
               child: ElevatedButton(
                 style: commonButtonStyle,
                 onPressed: isInputValid ? handleContinue : null,
-                child: Text("계속하기", style: commonbuttonTextStyle),
+                child: Text(
+                  _isKorean ? "계속하기" : "Continue",
+                  style: commonbuttonTextStyle,
+                ),
               ),
             ),
           ],
@@ -680,7 +866,7 @@ class _Onboarding4State extends State<Onboarding4> {
   }
 }
 
-// Onboarding 5
+// 온보딩 5
 class Onboarding5 extends StatefulWidget {
   const Onboarding5({super.key});
 
@@ -702,7 +888,18 @@ class _Onboarding5State extends State<Onboarding5> {
     });
   }
 
-  void handleContinue() {
+  Future<void> handleContinue() async {
+    registrationData['coping_methods'] = _controller.text.trim();
+    // Chat with Gemini before onboarding 6
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (_) => GeminiChatPage()),
+    );
+    if (result != null) {
+      registrationData['speaking_style'] = result['speaking_style'];
+      registrationData['tone'] = result['tone'];
+    }
+    // Proceed to onboarding step 6
     Navigator.push(context, MaterialPageRoute(builder: (_) => Onboarding6()));
   }
 
@@ -710,7 +907,7 @@ class _Onboarding5State extends State<Onboarding5> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(24).copyWith(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -722,26 +919,45 @@ class _Onboarding5State extends State<Onboarding5> {
                   onPressed: () => Navigator.pop(context),
                 ),
                 Expanded(
-                  child: LinearProgressIndicator(
-                    value: 0.68,
-                    color: primaryBlue,
-                    backgroundColor: progressGrey,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(kProgressBarRadius),
+                    child: LinearProgressIndicator(
+                      minHeight: kProgressBarHeight,
+                      value: 0.68,
+                      color: primaryBlue,
+                      backgroundColor: progressGrey,
+                    ),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 24),
 
-            Text("공황발작 발생 시 본인만의\n대처 방법이 있으신가요?", style: boldTextStyle),
+            Text(
+              _isKorean
+                  ? "공황발작 발생 시 본인만의\n대처 방법이 있으신가요?"
+                  : "Do you have your own way\nof coping with panic attacks?",
+              style: boldTextStyle,
+            ),
             SizedBox(height: 8),
-            Text("대처방법이 없다면 아무것도 적지 않고 계속하기를 눌러주세요", style: explainTextStyle),
-            SizedBox(height: 32),
+            Text(
+              _isKorean
+                  ? "대처방법이 없다면 아무것도 적지 않고 계속하기를 눌러주세요"
+                  : "If you have no coping methods, leave it blank and press \"continue.\"",
+              style: _isKorean ? explainTextStyle : en_explainTextStyle,
+            ),
+            SizedBox(height: 250),
 
-            Text("대처방법을 적어주세요"),
+            Text(
+              _isKorean ? "대처방법을 적어주세요" : "Please enter your coping methods.",
+            ),
             TextField(
               controller: _controller,
               decoration: InputDecoration(
-                hintText: "ex) 다른 생각을 한다",
+                hintText:
+                    _isKorean
+                        ? "ex) 다른 생각을 한다"
+                        : "ex) Think about something else.",
                 hintStyle: secretTextStyle,
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: primaryBlue),
@@ -754,7 +970,9 @@ class _Onboarding5State extends State<Onboarding5> {
 
             SizedBox(height: 12),
             Text(
-              "위 예시처럼 문장 형식으로 입력해 주세요\n대처 방법을 자세하고 정확하게 적어주세요",
+              _isKorean
+                  ? "위 예시처럼 문장 형식으로 입력해 주세요\n대처 방법을 자세하고 정확하게 적어주세요"
+                  : "Enter in sentence format like the example above.\nDescribe your coping method in detail and accurately.",
               style: explainTextStyle,
             ),
 
@@ -764,7 +982,10 @@ class _Onboarding5State extends State<Onboarding5> {
               child: ElevatedButton(
                 style: commonButtonStyle,
                 onPressed: handleContinue,
-                child: Text("계속하기", style: commonbuttonTextStyle),
+                child: Text(
+                  _isKorean ? "계속하기" : "Continue",
+                  style: commonbuttonTextStyle,
+                ),
               ),
             ),
             SizedBox(height: 30),
@@ -775,7 +996,7 @@ class _Onboarding5State extends State<Onboarding5> {
   }
 }
 
-// Onboarding 6
+// 온보딩 6
 class Onboarding6 extends StatelessWidget {
   const Onboarding6({super.key});
 
@@ -783,7 +1004,7 @@ class Onboarding6 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(24).copyWith(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -796,10 +1017,14 @@ class Onboarding6 extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                 ),
                 Expanded(
-                  child: LinearProgressIndicator(
-                    value: 1.0,
-                    color: primaryBlue,
-                    backgroundColor: progressGrey,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(kProgressBarRadius),
+                    child: LinearProgressIndicator(
+                      minHeight: kProgressBarHeight,
+                      value: 1.0,
+                      color: primaryBlue,
+                      backgroundColor: progressGrey,
+                    ),
                   ),
                 ),
               ],
@@ -813,7 +1038,9 @@ class Onboarding6 extends StatelessWidget {
             SizedBox(height: 24),
 
             Text(
-              "모든 설정이 끝났어요\n조금만 기다리면\n나만의 방패가 만들어져요",
+              _isKorean
+                  ? "모든 설정이 끝났어요\n조금만 기다리면\n나만의 방패가 만들어져요"
+                  : "All settings are complete.\nYour personal shieldwill\nbe ready soon.",
               style: boldTextStyle,
               textAlign: TextAlign.center,
             ),
@@ -822,12 +1049,351 @@ class Onboarding6 extends StatelessWidget {
 
             ElevatedButton(
               style: commonButtonStyle,
-              onPressed: () {},
-              child: Text("들어가기", style: commonbuttonTextStyle),
+              onPressed: () async {
+                // Send collected registration data
+                try {
+                  final response = await http.post(
+                    Uri.parse(
+                      'https://panicshield.ngrok.dev/api/auth/register',
+                    ),
+                    headers: {'Content-Type': 'application/json'},
+                    body: jsonEncode(registrationData),
+                  );
+                  if (response.statusCode == 200) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => LoginPage()),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _isKorean ? '회원가입에 실패했습니다.' : 'Registration failed',
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        _isKorean ? '네트워크 오류가 발생했습니다.' : 'Network error',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                _isKorean ? "들어가기" : "Enter",
+                style: commonbuttonTextStyle,
+              ),
             ),
             SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Gemini Chat helper and widget
+const String geminiEndpoint =
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const String geminiApiKey = '';
+
+Future<void> handleGeminiChatAndRegister(BuildContext context) async {
+  // Navigate to GeminiChatPage and wait for result
+  final result = await Navigator.push<Map<String, dynamic>>(
+    context,
+    MaterialPageRoute(builder: (_) => GeminiChatPage()),
+  );
+  if (result != null) {
+    // Merge speaking_style and tone into registrationData
+    registrationData['speaking_style'] = result['speaking_style'];
+    registrationData['tone'] = result['tone'];
+  }
+  // Send collected registration data
+  try {
+    final response = await http.post(
+      Uri.parse('https://panicshield.ngrok.dev/api/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(registrationData),
+    );
+    if (response.statusCode == 200) {
+      // Registration successful, navigate to LoginPage
+      Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isKorean ? '회원가입에 실패했습니다.' : 'Registration failed'),
+        ),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_isKorean ? '네트워크 오류가 발생했습니다.' : 'Network error')),
+    );
+  }
+}
+
+class GeminiChatPage extends StatefulWidget {
+  @override
+  _GeminiChatPageState createState() => _GeminiChatPageState();
+}
+
+class _GeminiChatPageState extends State<GeminiChatPage> {
+  final List<Map<String, String>> _messages =
+      []; // {'role': 'user'|'assistant', 'content': ...}
+  final TextEditingController _controller = TextEditingController();
+  Timer? _timer;
+  bool _classifying = false;
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _messages.add({
+          'role': 'system',
+          'content':
+              _isKorean
+                  ? '사용자의 상황에 맞춰 친절히 안내하세요.'
+                  : 'You are a helpful assistant guiding the user through onboarding.',
+        });
+        _messages.add({
+          'role': 'assistant',
+          'content':
+              _isKorean
+                  ? '안녕하세요! 지금까지 입력하신 정보를 바탕으로 대화를 시작할게요.'
+                  : 'Hello! I will start the conversation based on the information you have provided so far.',
+        });
+      });
+    });
+    // Remove automatic timeout: chat will run until user finishes.
+    _timer = null;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendMessage() async {
+    final content = _controller.text.trim();
+    if (content.isEmpty || _sending) return;
+    setState(() {
+      _messages.add({'role': 'user', 'content': content});
+      _controller.clear();
+      _sending = true;
+    });
+    try {
+      final uri = Uri.parse('$geminiEndpoint?key=$geminiApiKey');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              // messages 순서대로 하나의 parts 리스트에 모두 담는다
+              'parts': _messages.map((m) => {'text': m['content']}).toList(),
+            },
+          ],
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Extract reply text, handling different response formats
+        String replyText = '';
+        if (data['reply'] != null) {
+          replyText = data['reply'].toString();
+        } else if (data['choices'] != null &&
+            data['choices'][0]?['message'] != null) {
+          replyText = data['choices'][0]['message'].toString();
+        } else if (data['candidates'] != null &&
+            data['candidates'].isNotEmpty &&
+            data['candidates'][0]['content'] != null &&
+            data['candidates'][0]['content']['parts'] != null &&
+            data['candidates'][0]['content']['parts'].isNotEmpty) {
+          replyText =
+              data['candidates'][0]['content']['parts'][0]['text'].toString();
+        }
+        print('Gemini API response: $replyText');
+        print('Full Gemini API response body: ${response.body}');
+        setState(() {
+          _messages.add({'role': 'assistant', 'content': replyText});
+        });
+      } else {
+        print('Gemini API error status: ${response.statusCode}');
+        setState(() {
+          _messages.add({
+            'role': 'assistant',
+            'content': '[Error from Gemini API: ${response.statusCode}]',
+          });
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _messages.add({'role': 'assistant', 'content': '[Network error]'});
+      });
+    } finally {
+      setState(() {
+        _sending = false;
+      });
+    }
+  }
+
+  Future<void> _finishAndClassify() async {
+    if (_classifying) return;
+    setState(() {
+      _classifying = true;
+    });
+    // Compose a final message to classify the conversation
+    final classificationPrompt =
+        "Based on the entire conversation so far, what is the user's speaking style and tone? Respond in JSON with keys 'speaking_style' and 'tone'.";
+    final allMessages = List<Map<String, String>>.from(_messages)
+      ..add({'role': 'user', 'content': classificationPrompt});
+    try {
+      final response = await http.post(
+        Uri.parse(geminiEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': geminiApiKey,
+        },
+        body: jsonEncode({
+          'contents':
+              allMessages
+                  .map(
+                    (m) => {
+                      'parts': [
+                        {'text': m['content']},
+                      ],
+                    },
+                  )
+                  .toList(),
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String reply =
+            data['reply'] ??
+            data['choices']?[0]?['message'] ??
+            data['choices']?[0]?['text'] ??
+            '';
+        Map<String, dynamic> parsed = {};
+        try {
+          // Try to parse JSON from reply
+          parsed = jsonDecode(reply);
+        } catch (_) {
+          // Fallback: try to extract JSON substring
+          final match = RegExp(r'\{[\s\S]*\}').firstMatch(reply);
+          if (match != null) {
+            try {
+              parsed = jsonDecode(match.group(0)!);
+            } catch (_) {}
+          }
+        }
+        if (parsed.containsKey('speaking_style') &&
+            parsed.containsKey('tone')) {
+          if (mounted) Navigator.pop(context, parsed);
+        } else {
+          if (mounted)
+            Navigator.pop(context, {'speaking_style': '', 'tone': ''});
+        }
+      } else {
+        if (mounted) Navigator.pop(context, {'speaking_style': '', 'tone': ''});
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context, {'speaking_style': '', 'tone': ''});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_isKorean ? '대화 스타일 분석' : 'Chat Style Analysis'),
+        actions: [
+          if (!_classifying)
+            TextButton(
+              onPressed: _finishAndClassify,
+              child: Text(_isKorean ? '분석 완료' : 'Finish & Analyze'),
+            ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.all(12),
+              itemCount: _messages.length,
+              itemBuilder: (context, idx) {
+                final m = _messages[idx];
+                final isUser = m['role'] == 'user';
+                return Align(
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(vertical: 4),
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color:
+                          isUser
+                              ? primaryBlue.withOpacity(0.2)
+                              : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      m['content'] ?? '',
+                      style: TextStyle(
+                        color: isUser ? Colors.black : Colors.black87,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_classifying)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: CircularProgressIndicator(),
+            ),
+          if (!_classifying)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        onSubmitted: (_) => _sendMessage(),
+                        enabled: !_sending,
+                        decoration: InputDecoration(
+                          hintText:
+                              _isKorean ? '메시지를 입력하세요...' : 'Type a message...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(Icons.send),
+                      onPressed: _sending ? null : _sendMessage,
+                      color: primaryBlue,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

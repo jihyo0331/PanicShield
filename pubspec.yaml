@@ -38,6 +38,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  provider: ^6.0.5
+  http: ^0.13.0
+  flutter_dotenv: ^5.2.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -51,12 +54,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-  fonts:
-    - family: Pretendard
-      fonts:
-        - asset: fonts/Pretendard-Regular.ttf
-        - asset: fonts/Pretendard-Bold.ttf
-          weight: 700
 
 
   # The following line ensures that the Material Icons font is
@@ -82,8 +79,7 @@ flutter:
            weight: 600
          - asset: font/Pretendard-Thin.otf
            weight: 100
-           
-
+          
 
   # To add assets to your application, add an assets section, like this:
   assets:
@@ -101,8 +97,8 @@ flutter:
     - img/Handshake.png
     - img/Film_projector.png
     - img/Soccer_ball.png
-    - img/Film projector.png
-    - img/Soccer ball.png
+    - img/Film_projector.png
+    - img/Soccer_ball.png
     - img/PanicShield_logo.png
     - img/chat.png
     - img/chat_c.png
